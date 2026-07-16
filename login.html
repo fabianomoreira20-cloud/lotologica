@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Entrar — LotoLógica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-light: #ffffff;
+            --theme-color: #9333ea;
+            --success-color: #10b981;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(rgba(255, 255, 255, 0.04) 3px, transparent 3px),
+                radial-gradient(rgba(255, 255, 255, 0.02) 4px, transparent 4px);
+            background-size: 40px 40px, 90px 90px;
+            background-position: 0 0, 20px 20px;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .caixa { width: 100%; max-width: 400px; background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 30px 25px; box-shadow: var(--shadow); }
+        .logo { text-align: center; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 6px; }
+        .logo span { color: #fbbf24; }
+        .sub { text-align: center; color: #94a3b8; font-size: 0.85rem; margin-bottom: 25px; }
+        label { display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        input { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 13px; border-radius: 8px; font-size: 1rem; outline: none; margin-bottom: 16px; }
+        input:focus { border-color: var(--theme-color); }
+        .btn { width: 100%; background: var(--success-color); color: #fff; border: none; padding: 14px; border-radius: 8px; font-weight: 800; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .btn:active { transform: scale(0.99); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .link { display: block; text-align: center; margin-top: 16px; color: #94a3b8; font-size: 0.82rem; text-decoration: none; cursor: pointer; }
+        .link:hover { color: #e2e8f0; }
+        .aviso { margin-top: 20px; padding: 12px; border-radius: 8px; font-size: 0.75rem; line-height: 1.5; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); color: #fcd34d; }
+        .msg { padding: 12px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 16px; display: none; line-height: 1.4; }
+        .msg-erro { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; }
+        .msg-ok { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35); color: #6ee7b7; }
+    </style>
+</head>
+<body>
+    <div class="caixa">
+        <div class="logo">Loto<span>Lógica</span></div>
+        <div class="sub">Entre para acessar suas análises</div>
+
+        <div class="msg msg-erro" id="msg-erro"></div>
+        <div class="msg msg-ok" id="msg-ok"></div>
+
+        <form id="form-login">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" autocomplete="email" placeholder="seu@email.com" required>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" autocomplete="current-password" placeholder="Sua senha" required>
+
+            <button type="submit" class="btn" id="btn-entrar">ENTRAR</button>
+        </form>
+
+        <a class="link" id="link-recuperar">Esqueci minha senha</a>
+
+        <div class="aviso">
+            <strong>Cadastro de novas contas</strong><br>
+            Ainda não está aberto. Ele será liberado junto com a assinatura, assim que a Central B12 estiver no ar.
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="b12.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const elErro = document.getElementById('msg-erro');
+        const elOk = document.getElementById('msg-ok');
+        const btn = document.getElementById('btn-entrar');
+
+        function mostrarErro(txt) { elOk.style.display = 'none'; elErro.innerText = txt; elErro.style.display = 'block'; }
+        function mostrarOk(txt) { elErro.style.display = 'none'; elOk.innerText = txt; elOk.style.display = 'block'; }
+
+        // Se já estiver logado, não fica preso na tela de login
+        (async () => {
+            const sessao = await pegarSessao();
+            if (sessao) location.replace('index.html');
+        })();
+
+        document.getElementById('form-login').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            elErro.style.display = 'none'; elOk.style.display = 'none';
+            btn.disabled = true; btn.innerText = 'ENTRANDO…';
+
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+
+            const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+
+            if (error) {
+                mostrarErro(traduzErroAuth(error));
+                btn.disabled = false; btn.innerText = 'ENTRAR';
+                return;
+            }
+            location.replace('index.html');
+        });
+
+        document.getElementById('link-recuperar').addEventListener('click', async () => {
+            const email = document.getElementById('email').value.trim();
+            if (!email) { mostrarErro('Digite seu e-mail no campo acima e clique de novo em "Esqueci minha senha".'); return; }
+
+            const { error } = await sb.auth.resetPasswordForEmail(email, {
+                redirectTo: location.origin + '/login.html'
+            });
+            if (error) { mostrarErro(traduzErroAuth(error)); return; }
+            mostrarOk('Enviamos um link de recuperação para ' + email + '. Confira sua caixa de entrada.');
+        });
+    </script>
+</body>
+</html>

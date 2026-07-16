@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Assinatura — LotoLógica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --theme-color: #9333ea;
+            --success-color: #10b981;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body {
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(rgba(255,255,255,0.04) 3px, transparent 3px),
+                radial-gradient(rgba(255,255,255,0.02) 4px, transparent 4px);
+            background-size: 40px 40px, 90px 90px;
+            background-position: 0 0, 20px 20px;
+            color: #f8fafc; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .caixa { width: 100%; max-width: 420px; background: var(--card-bg); border: 1px solid #fbbf24; border-radius: 16px; padding: 30px 25px; box-shadow: var(--shadow); text-align: center; }
+        .logo { font-size: 1.6rem; font-weight: 800; margin-bottom: 20px; }
+        .logo span { color: #fbbf24; }
+        .selo { font-size: 0.75rem; color: #fbbf24; font-weight: 800; letter-spacing: 1px; }
+        .preco { font-size: 2.6rem; font-weight: 800; color: var(--success-color); margin: 6px 0; text-shadow: 0 2px 10px rgba(16,185,129,0.3); }
+        .preco small { font-size: 1rem; color: #94a3b8; font-weight: 400; }
+        .texto { color: #cbd5e1; font-size: 0.85rem; line-height: 1.6; margin-bottom: 22px; }
+        .btn { width: 100%; background: var(--success-color); color: #fff; border: none; padding: 15px; border-radius: 8px; font-weight: 800; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+        .link { display: block; margin-top: 18px; color: #94a3b8; font-size: 0.8rem; text-decoration: none; cursor: pointer; }
+        .aviso { margin-top: 20px; padding: 14px; border-radius: 8px; font-size: 0.78rem; line-height: 1.55; background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.25); color: #fcd34d; text-align: left; }
+        #area-pix { display: none; margin-top: 20px; }
+        #qrcode img { width: 220px; height: 220px; background: #fff; padding: 10px; border-radius: 12px; }
+        .copiacola { margin-top: 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-size: 0.7rem; color: #94a3b8; word-break: break-all; text-align: left; }
+        .btn-copiar { margin-top: 10px; background: var(--theme-color); }
+        .rodape { margin-top: 18px; font-size: 0.7rem; color: #64748b; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="caixa">
+        <div class="logo">Loto<span>Lógica</span></div>
+
+        <div class="selo">ACESSO VIP</div>
+        <div class="preco">R$ 19,90<small>/mês</small></div>
+        <p class="texto">Análise estatística sobre o histórico oficial real da Caixa, em todas as modalidades.</p>
+
+        <button class="btn" id="btn-pix">PAGAR COM PIX</button>
+
+        <div id="area-pix">
+            <p style="font-size:0.8rem;color:#94a3b8;margin-bottom:10px;">Escaneie o QR Code ou copie o código:</p>
+            <div id="qrcode"></div>
+            <div class="copiacola" id="copiacola"></div>
+            <button class="btn btn-copiar" id="btn-copiar">COPIAR CÓDIGO PIX</button>
+            <p style="font-size:0.75rem;color:#64748b;margin-top:12px;">Assim que o pagamento cair, seu acesso libera automaticamente.</p>
+        </div>
+
+        <div class="aviso" id="aviso-b12">
+            <strong>⏳ Cobrança em construção</strong><br>
+            O pagamento por Pix será ligado assim que a Central B12 publicar o serviço de cobrança. Enquanto isso, o acesso é liberado por cortesia.
+        </div>
+
+        <a class="link" id="link-voltar">← Voltar para o sistema</a>
+        <a class="link" id="link-sair">Sair da conta</a>
+
+        <p class="rodape">Pagamento processado pela B12 TECHNOLOGY LTDA — CNPJ 67.294.472/0001-75</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="b12.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        let sessaoAtual = null;
+
+        (async () => {
+            sessaoAtual = await pegarSessao();
+            if (!sessaoAtual) { location.replace('login.html'); return; }
+
+            // Se a B12 ainda não tem cobrança, o botão fica desligado (honesto).
+            if (!B12.ligada()) {
+                const b = document.getElementById('btn-pix');
+                b.disabled = true;
+                b.innerText = 'PIX EM BREVE';
+            } else {
+                document.getElementById('aviso-b12').style.display = 'none';
+            }
+        })();
+
+        document.getElementById('btn-pix').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-pix');
+            btn.disabled = true; btn.innerText = 'GERANDO PIX…';
+
+            // O loto NÃO fala com o banco. Ele pede pra B12.
+            const r = await B12.gerarPix(sessaoAtual);
+
+            if (!r.ok) {
+                btn.disabled = false; btn.innerText = 'PAGAR COM PIX';
+                alert(r.mensagem || 'Não foi possível gerar o Pix agora.');
+                return;
+            }
+
+            document.getElementById('qrcode').innerHTML = '<img src="' + r.qrcode + '" alt="QR Code do Pix">';
+            document.getElementById('copiacola').innerText = r.copiaECola;
+            document.getElementById('area-pix').style.display = 'block';
+            btn.style.display = 'none';
+
+            // Fica conferindo se o Pix caiu (quem sabe é a B12).
+            const timer = setInterval(async () => {
+                const c = await B12.conferirPagamento(sessaoAtual, r.txid);
+                if (c && c.pago) { clearInterval(timer); location.replace('index.html'); }
+            }, 5000);
+        });
+
+        document.getElementById('btn-copiar').addEventListener('click', () => {
+            const txt = document.getElementById('copiacola').innerText;
+            navigator.clipboard.writeText(txt);
+            document.getElementById('btn-copiar').innerText = 'CÓDIGO COPIADO!';
+            setTimeout(() => { document.getElementById('btn-copiar').innerText = 'COPIAR CÓDIGO PIX'; }, 2000);
+        });
+
+        document.getElementById('link-voltar').addEventListener('click', () => location.replace('index.html'));
+        document.getElementById('link-sair').addEventListener('click', () => sair());
+    </script>
+</body>
+</html>

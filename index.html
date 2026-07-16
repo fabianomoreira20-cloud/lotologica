@@ -42,7 +42,12 @@
 
         header { width: 100%; background-color: var(--card-bg); padding: 20px; text-align: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); }
         header h1 { font-size: 1.6rem; font-weight: 800; color: var(--text-light); letter-spacing: -0.5px; }
-        header span { color: #fbbf24; } 
+        header span { color: #fbbf24; }
+
+        #barra-usuario { display: none; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; font-size: 0.72rem; color: #94a3b8; }
+        #usuario-email { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60vw; }
+        #btn-sair { background: transparent; border: 1px solid #334155; color: #94a3b8; padding: 5px 12px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
+        #btn-sair:hover { color: #e2e8f0; border-color: #475569; }
 
         main { width: 100%; max-width: 480px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 
@@ -76,6 +81,10 @@
 
     <header>
         <h1>Loto<span>Lógica</span></h1>
+        <div id="barra-usuario">
+            <span id="usuario-email"></span>
+            <button id="btn-sair" onclick="sair()">Sair</button>
+        </div>
     </header>
 
     <main>
@@ -117,7 +126,18 @@
         <p style="text-align: justify;">Nosso sistema analisa o histórico oficial real da Caixa (frequência, atraso e distribuição das dezenas) para montar jogos com o mesmo perfil estatístico dos sorteios que de fato saem, e para evitar padrões muito jogados — reduzindo, em caso de prêmio, a divisão com outros apostadores. A loteria é um sorteio de probabilidade: nenhuma análise altera a chance de acerto nem garante premiação. Jogue com responsabilidade.</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="b12.js"></script>
+    <script src="auth.js"></script>
     <script>
+        // Exige login e pergunta pra B12 se este usuário tem acesso ao 'lotologica'.
+        (async () => {
+            const ok = await protegerPagina();
+            if (!ok) return; // protegerPagina já redirecionou
+            document.getElementById('usuario-email').innerText = ok.sessao.user.email;
+            document.getElementById('barra-usuario').style.display = 'flex';
+        })();
+
         function abrirMatriz(jogo) {
             window.location.href = 'matriz.html?jogo=' + jogo;
         }
