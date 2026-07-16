@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LotoLógica PRO</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-dark: #f8fafc;
+            --text-light: #ffffff;
+            --theme-color: #8E24AA; 
+            --success-color: #10b981;
+            --alt-color: #3b82f6;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { 
+            background-color: var(--bg-color); 
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.04) 3px, transparent 3px), 
+                radial-gradient(rgba(255, 255, 255, 0.02) 4px, transparent 4px);
+            background-size: 40px 40px, 90px 90px;
+            background-position: 0 0, 20px 20px;
+            color: var(--text-dark); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        header { width: 100%; background-color: var(--theme-color); color: var(--text-light); padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 10; transition: background-color 0.3s; border-bottom: 2px solid rgba(255,255,255,0.1); }
+        .btn-voltar { color: var(--text-light); text-decoration: none; font-weight: 800; font-size: 1.4rem; padding: 5px 10px; border-radius: 6px; }
+        header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
+
+        main { width: 100%; max-width: 480px; padding: 20px; display: flex; flex-direction: column; gap: 18px; flex-grow: 1; }
+
+        .status-box { background-color: var(--card-bg); border-left: 4px solid var(--theme-color); padding: 15px; border-radius: 8px; box-shadow: var(--shadow); font-size: 0.9rem; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05); }
+        .pulse-dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; }
+        .dot-green { background-color: var(--success-color); box-shadow: 0 0 10px var(--success-color); }
+        .dot-orange { background-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+
+        .banner-premio { background: linear-gradient(135deg, #f59e0b, #b45309); color: #fff; padding: 18px; border-radius: 12px; text-align: center; font-weight: 800; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); display: none; border: 1px solid #fbbf24; }
+        .banner-premio p { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; color: #fef3c7; }
+        .banner-premio h2 { font-size: 2rem; color: #ffffff; letter-spacing: -1px; text-shadow: 1px 2px 4px rgba(0,0,0,0.3); }
+
+        .painel-aposta { background-color: #0f172a; color: white; padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden; }
+        
+        .painel-exploracao { border-color: var(--alt-color); background: linear-gradient(180deg, #0f172a 0%, #172554 100%); }
+
+        .tag-pro { position: absolute; top: 0; right: 0; background-color: #fbbf24; color: #0f172a; font-size: 0.65rem; font-weight: 800; padding: 4px 10px; border-bottom-left-radius: 8px; letter-spacing: 0.5px; }
+        .tag-alt { background-color: var(--alt-color); color: white; }
+
+        .controles-superiores { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 10px; }
+        .controle-qtd { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+        .controle-qtd label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .controle-qtd select { background-color: #1e293b; color: white; border: 1px solid #334155; padding: 10px; border-radius: 8px; font-weight: 800; font-size: 1rem; outline: none; cursor: pointer; }
+        
+        .btn-gerar { background-color: var(--success-color); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: transform 0.1s, background 0.2s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); width: 100%; margin-top: 5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .btn-gerar:active { transform: scale(0.98); }
+        
+        .btn-alt { background-color: var(--alt-color); box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
+
+        .valor-aposta { text-align: center; margin-top: 10px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .valor-aposta p { font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .valor-aposta h2 { font-size: 1.8rem; color: var(--success-color); font-weight: 800; }
+        .valor-aposta .preco-alt { color: var(--alt-color); }
+
+        .matriz-container { background-color: transparent; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        
+        .bilhete-box { background-color: var(--card-bg); padding: 20px; border-radius: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: var(--shadow); position: relative; }
+        .bilhete-box h4 { color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px; font-weight: 600; }
+        
+        .bolas-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+        .bola { display: flex; justify-content: center; align-items: center; width: 38px; height: 38px; background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--theme-color); color: var(--text-light); border-radius: 50%; font-weight: 800; font-size: 1rem; box-shadow: 0 4px 8px rgba(0,0,0,0.4), inset 0 2px 0 rgba(255,255,255,0.2); text-shadow: 1px 1px 2px rgba(0,0,0,0.5); border: 1px solid rgba(0,0,0,0.2); }
+
+        .divisor { width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 10px 0; }
+
+        footer { width: 100%; max-width: 480px; padding: 25px 20px; text-align: left; font-size: 0.72rem; color: #64748b; line-height: 1.5; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.05); }
+        footer p:first-child { color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="btn-voltar">←</a>
+        <h1 id="titulo-header">LotoLógica</h1>
+        <div style="width: 30px;"></div>
+    </header>
+
+    <main>
+        <div class="status-box" id="status-conexao">
+            <span class="pulse-dot dot-orange" id="status-dot"></span>
+            <strong id="status-text">Sincronizando...</strong>
+        </div>
+
+        <div class="banner-premio" id="banner-premio">
+            <p id="texto-banner-acumulou">Estimativa do Próximo Prêmio</p>
+            <h2 id="valor-acumulado-display">R$ 0,00</h2>
+        </div>
+
+        <div class="painel-aposta" id="painel-mestra" style="display: none;">
+            <div class="tag-pro" id="tag-motor">MOTOR ANALÍTICO ATIVO</div>
+            <div class="controles-superiores">
+                <div class="controle-qtd">
+                    <label>Dezenas por Bilhete</label>
+                    <select id="seletor-dezenas-mestra" onchange="atualizarPreco('mestra')"></select>
+                </div>
+                <div class="controle-qtd">
+                    <label>Qtd. de Bilhetes</label>
+                    <select id="seletor-bilhetes-mestra" onchange="atualizarPreco('mestra')">
+                        <option value="1">1 Bilhete</option>
+                        <option value="2">2 Bilhetes</option>
+                        <option value="3">3 Bilhetes</option>
+                        <option value="4">4 Bilhetes</option>
+                        <option value="5">5 Bilhetes</option>
+                        <option value="10">10 Bilhetes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn-gerar" onclick="gerarApostaMestra()">GERAR APOSTA MESTRA</button>
+
+            <div class="valor-aposta">
+                <p>Custo na Lotérica</p>
+                <h2 id="valor-display-mestra">R$ 0,00</h2>
+            </div>
+        </div>
+
+        <div class="matriz-container" id="resultado-mestra"></div>
+        
+        <button class="btn-gerar btn-alt" id="btn-abrir-exploracao" onclick="abrirPainelExploracao()" style="display: none;">EXPLORAR NOVAS PROBABILIDADES</button>
+
+        <div class="painel-aposta painel-exploracao" id="painel-exploracao" style="display: none;">
+            <div class="tag-pro tag-alt">MODO EXPLORAÇÃO</div>
+            <div class="controles-superiores">
+                <div class="controle-qtd">
+                    <label>Dezenas Alternativas</label>
+                    <select id="seletor-dezenas-alt" onchange="atualizarPreco('alt')"></select>
+                </div>
+                <div class="controle-qtd">
+                    <label>Qtd. de Bilhetes</label>
+                    <select id="seletor-bilhetes-alt" onchange="atualizarPreco('alt')">
+                        <option value="1">1 Bilhete</option>
+                        <option value="2">2 Bilhetes</option>
+                        <option value="3">3 Bilhetes</option>
+                        <option value="4">4 Bilhetes</option>
+                        <option value="5">5 Bilhetes</option>
+                        <option value="10">10 Bilhetes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn-gerar btn-alt" onclick="gerarApostasAlternativas()">GERAR COMBINAÇÕES</button>
+
+            <div class="valor-aposta">
+                <p>Custo Destes Bilhetes</p>
+                <h2 class="preco-alt" id="valor-display-alt">R$ 0,00</h2>
+            </div>
+        </div>
+
+        <div class="matriz-container" id="resultado-alt"></div>
+
+    </main>
+
+    <footer>
+        <p style="font-weight: 800; margin-bottom: 8px; font-size: 0.8rem;">Aviso de Transparência</p>
+        <p style="text-align: justify;">Jogos montados a partir do histórico oficial real da Caixa. A análise organiza suas escolhas com base em dados, mas não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade.</p>
+    </footer>
+
+    <script src="motor.js"></script>
+
+</body>
+</html>

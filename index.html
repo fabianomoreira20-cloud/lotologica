@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LotoLógica PRO</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-dark: #f8fafc;
+            --text-light: #ffffff;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+
+            --color-lfacil: #9333ea;
+            --color-msena: #16a34a;
+            --color-lmania: #ea580c;
+            --color-quina: #0284c7;
+            --color-dsorte: #ea580c;
+            --color-tmania: #334155;
+            --color-milionaria: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { 
+            background-color: var(--bg-color); 
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.04) 3px, transparent 3px), 
+                radial-gradient(rgba(255, 255, 255, 0.02) 4px, transparent 4px);
+            background-size: 40px 40px, 90px 90px;
+            background-position: 0 0, 20px 20px;
+            color: var(--text-dark); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        header { width: 100%; background-color: var(--card-bg); padding: 20px; text-align: center; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        header h1 { font-size: 1.6rem; font-weight: 800; color: var(--text-light); letter-spacing: -0.5px; }
+        header span { color: #fbbf24; } 
+
+        main { width: 100%; max-width: 480px; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+        .subscription-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #fbbf24; color: var(--text-light); border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 8px 20px rgba(251, 191, 36, 0.15); }
+        .price { font-size: 2.5rem; font-weight: 800; color: #10b981; margin: 8px 0; text-shadow: 0 2px 10px rgba(16, 185, 129, 0.3); }
+        .price span { font-size: 1rem; font-weight: 400; color: #94a3b8; }
+
+        .game-grid { display: flex; flex-direction: column; gap: 14px; }
+        .game-grid h3 { font-size: 1.1rem; color: #e2e8f0; margin-bottom: 5px; font-weight: 600; }
+
+        .btn-game { width: 100%; padding: 18px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: var(--text-light); cursor: pointer; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.4); transition: transform 0.1s, box-shadow 0.2s; }
+        .btn-game:active { transform: scale(0.98); }
+        .btn-game .info { text-align: left; }
+        .btn-game .info h4 { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .btn-game .info p { font-size: 0.75rem; color: rgba(255,255,255,0.8); margin-top: 3px; }
+        .arrow { font-size: 1.2rem; font-weight: 800; }
+
+        .lf { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-lfacil); }
+        .ms { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-msena); }
+        .lm { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-lmania); }
+        .qn { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-quina); }
+        .ds { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-dsorte); }
+        .tm { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-tmania); }
+        .ml { background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent), var(--color-milionaria); border: 1px solid #fbbf24; }
+        .ml h4 { color: #fbbf24; }
+
+        footer { margin-top: auto; width: 100%; max-width: 480px; padding: 25px 20px; text-align: left; font-size: 0.72rem; color: #64748b; line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Loto<span>Lógica</span></h1>
+    </header>
+
+    <main>
+        <div class="subscription-card">
+            <p style="font-size: 0.85rem; color: #fbbf24; font-weight: 800; letter-spacing: 1px;">ACESSO VIP</p>
+            <div class="price">R$ 19,90<span>/mês</span></div>
+            <p style="font-size: 0.85rem; color: #cbd5e1;">Análise estatística baseada em dados reais.</p>
+        </div>
+
+        <div class="game-grid">
+            <h3>Selecione a Modalidade:</h3>
+            
+            <button class="btn-game lf" onclick="abrirMatriz('lfacil')">
+                <div class="info"><h4>L-FÁCIL</h4><p>Gerador analítico de 15 a 20 dezenas</p></div><span class="arrow">➔</span>
+            </button>
+            <button class="btn-game ms" onclick="abrirMatriz('msena')">
+                <div class="info"><h4>M-SENA</h4><p>Gerador analítico de 6 a 20 dezenas</p></div><span class="arrow">➔</span>
+            </button>
+            <button class="btn-game lm" onclick="abrirMatriz('lmania')">
+                <div class="info"><h4>L-MANIA</h4><p>Gerador analítico de 50 dezenas</p></div><span class="arrow">➔</span>
+            </button>
+            <button class="btn-game qn" onclick="abrirMatriz('quina')">
+                <div class="info"><h4>QUINA</h4><p>Gerador analítico de 5 dezenas</p></div><span class="arrow">➔</span>
+            </button>
+            <button class="btn-game ds" onclick="abrirMatriz('dsorte')">
+                <div class="info"><h4>D-DA-SORTE</h4><p>Análise de 7 números + Mês</p></div><span class="arrow">➔</span>
+            </button>
+            <button class="btn-game tm" onclick="abrirMatriz('tmania')">
+                <div class="info"><h4>T-MANIA</h4><p>Análise de 10 números + Time</p></div><span class="arrow">➔</span>
+            </button>
+            <button class="btn-game ml" onclick="abrirMatriz('milionaria')">
+                <div class="info"><h4>+MILIONÁRIA</h4><p>Análise de 6 dezenas + Trevos</p></div><span class="arrow">➔</span>
+            </button>
+        </div>
+    </main>
+
+    <footer>
+        <p style="font-weight: 800; color: #94a3b8; margin-bottom: 8px; font-size: 0.8rem;">Aviso de Transparência</p>
+        <p style="text-align: justify;">Nosso sistema analisa o histórico oficial real da Caixa (frequência, atraso e distribuição das dezenas) para montar jogos com o mesmo perfil estatístico dos sorteios que de fato saem, e para evitar padrões muito jogados — reduzindo, em caso de prêmio, a divisão com outros apostadores. A loteria é um sorteio de probabilidade: nenhuma análise altera a chance de acerto nem garante premiação. Jogue com responsabilidade.</p>
+    </footer>
+
+    <script>
+        function abrirMatriz(jogo) {
+            window.location.href = 'matriz.html?jogo=' + jogo;
+        }
+    </script>
+
+</body>
+</html>
