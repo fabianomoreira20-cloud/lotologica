@@ -16,9 +16,17 @@
 // Identificador deste produto na B12 (o DrControl será 'drcontrol').
 const PRODUTO = 'lotologica';
 
-// Endereço da Central. Fica null até a B12 publicar os endpoints.
-// TODO(B12): preencher quando a central expuser a API.
-const B12_API = null; // ex.: 'https://central.b12tech.com.br/api'
+// Endereço da Central B12 (no ar desde 17/07/2026).
+// CORS liberado pra lotologica.com.br, www. e lotologica-jet.vercel.app.
+const B12_API = 'https://central.b12tech.com.br/api';
+
+// ⛔ TRAVA DE VENDA — não remover sem ordem do dono.
+// A Central ainda NÃO plugou a nota fiscal no fluxo novo: hoje o pagamento
+// libera o acesso mas NÃO emite nota. Enquanto isto for false, o botão de Pix
+// fica desligado (não se cobra de cliente real). A integração de acesso
+// continua ligada e testável normalmente.
+// Ligar só quando: (1) nota fiscal plugada e (2) decidida a garantia de 7 dias.
+const VENDA_LIBERADA = false;
 
 const B12 = {
     produto: PRODUTO,
@@ -26,6 +34,11 @@ const B12 = {
     // Diz se a integração real com a Central já existe.
     ligada() {
         return !!B12_API;
+    },
+
+    // Diz se já pode COBRAR de cliente de verdade (depende da nota fiscal).
+    vendaLiberada() {
+        return B12.ligada() && VENDA_LIBERADA;
     },
 
     // ------------------------------------------------------------

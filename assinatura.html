@@ -61,8 +61,8 @@
         </div>
 
         <div class="aviso" id="aviso-b12">
-            <strong>⏳ Cobrança em construção</strong><br>
-            O pagamento por Pix será ligado assim que a Central B12 publicar o serviço de cobrança. Enquanto isso, o acesso é liberado por cortesia.
+            <strong>⏳ Assinatura abre em breve</strong><br>
+            Estamos finalizando os últimos ajustes para começar a vender. Se você quer acesso desde já, fale com a gente.
         </div>
 
         <a class="link" id="link-voltar">← Voltar para o sistema</a>
@@ -81,8 +81,9 @@
             sessaoAtual = await pegarSessao();
             if (!sessaoAtual) { location.replace('login.html'); return; }
 
-            // Se a B12 ainda não tem cobrança, o botão fica desligado (honesto).
-            if (!B12.ligada()) {
+            // Cobrança só é oferecida quando a venda estiver liberada
+            // (depende da nota fiscal estar plugada na Central).
+            if (!B12.vendaLiberada()) {
                 const b = document.getElementById('btn-pix');
                 b.disabled = true;
                 b.innerText = 'PIX EM BREVE';

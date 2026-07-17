@@ -47,7 +47,7 @@
 <body>
     <div class="caixa">
         <div class="logo">Loto<span>Lógica</span></div>
-        <div class="sub">Entre para acessar suas análises</div>
+        <div class="sub" id="subtitulo">Entre para acessar suas análises</div>
 
         <div class="msg msg-erro" id="msg-erro"></div>
         <div class="msg msg-ok" id="msg-ok"></div>
@@ -63,11 +63,7 @@
         </form>
 
         <a class="link" id="link-recuperar">Esqueci minha senha</a>
-
-        <div class="aviso">
-            <strong>Cadastro de novas contas</strong><br>
-            Ainda não está aberto. Ele será liberado junto com a assinatura, assim que a Central B12 estiver no ar.
-        </div>
+        <a class="link" id="link-modo"><b>Não tem conta? Criar agora</b></a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -77,6 +73,7 @@
         const elErro = document.getElementById('msg-erro');
         const elOk = document.getElementById('msg-ok');
         const btn = document.getElementById('btn-entrar');
+        let modo = 'entrar'; // 'entrar' | 'cadastrar'
 
         function mostrarErro(txt) { elOk.style.display = 'none'; elErro.innerText = txt; elErro.style.display = 'block'; }
         function mostrarOk(txt) { elErro.style.display = 'none'; elOk.innerText = txt; elOk.style.display = 'block'; }
@@ -87,16 +84,60 @@
             if (sessao) location.replace('index.html');
         })();
 
+        document.getElementById('link-modo').addEventListener('click', () => {
+            elErro.style.display = 'none'; elOk.style.display = 'none';
+            if (modo === 'entrar') {
+                modo = 'cadastrar';
+                document.getElementById('subtitulo').innerText = 'Crie sua conta para começar';
+                document.getElementById('senha').setAttribute('autocomplete', 'new-password');
+                document.getElementById('senha').placeholder = 'Crie uma senha (mín. 6 caracteres)';
+                btn.innerText = 'CRIAR CONTA';
+                document.getElementById('link-modo').innerHTML = '<b>Já tenho conta — entrar</b>';
+                document.getElementById('link-recuperar').style.display = 'none';
+            } else {
+                modo = 'entrar';
+                document.getElementById('subtitulo').innerText = 'Entre para acessar suas análises';
+                document.getElementById('senha').setAttribute('autocomplete', 'current-password');
+                document.getElementById('senha').placeholder = 'Sua senha';
+                btn.innerText = 'ENTRAR';
+                document.getElementById('link-modo').innerHTML = '<b>Não tem conta? Criar agora</b>';
+                document.getElementById('link-recuperar').style.display = 'block';
+            }
+        });
+
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
             elErro.style.display = 'none'; elOk.style.display = 'none';
-            btn.disabled = true; btn.innerText = 'ENTRANDO…';
-
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value;
 
-            const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+            btn.disabled = true;
+            btn.innerText = (modo === 'entrar') ? 'ENTRANDO…' : 'CRIANDO…';
 
+            if (modo === 'cadastrar') {
+                // ⚠️ CRÍTICO: o campo 'produto' É OBRIGATÓRIO.
+                // O gatilho do Supabase (handle_new_user) provisiona escritório do
+                // DrControl em todo cadastro que NÃO vier marcado. Sem esta linha,
+                // cada cadastro do Loto criaria um escritório fantasma no DrControl.
+                const { error } = await sb.auth.signUp({
+                    email,
+                    password: senha,
+                    options: { data: { produto: PRODUTO } } // PRODUTO = 'lotologica' (vem do b12.js)
+                });
+                if (error) {
+                    mostrarErro(traduzErroAuth(error));
+                    btn.disabled = false; btn.innerText = 'CRIAR CONTA';
+                    return;
+                }
+                const sessao = await pegarSessao();
+                if (sessao) { location.replace('index.html'); return; }
+                // Projeto pede confirmação de e-mail
+                mostrarOk('Conta criada! Enviamos um e-mail de confirmação para ' + email + '. Confirme e depois entre.');
+                btn.disabled = false; btn.innerText = 'CRIAR CONTA';
+                return;
+            }
+
+            const { error } = await sb.auth.signInWithPassword({ email, password: senha });
             if (error) {
                 mostrarErro(traduzErroAuth(error));
                 btn.disabled = false; btn.innerText = 'ENTRAR';
