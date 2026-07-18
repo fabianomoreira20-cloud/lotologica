@@ -69,7 +69,7 @@ window.onload = () => {
 
     config = configJogos[jogoSelecionado];
     document.documentElement.style.setProperty('--theme-color', config.cor);
-    document.getElementById('titulo-header').innerText = `LotoLógica ${config.nome}`;
+    document.getElementById('titulo-header').innerText = `Meu Trevo ${config.nome}`;
 
     inicializarSeletores();
     carregarDados();
@@ -629,13 +629,13 @@ function cabecalhoInfo() {
 function enviarWhatsApp(lista) {
     const info = cabecalhoInfo();
     const partes = [];
-    partes.push(`*LotoLógica — ${info.jogo}*`);
+    partes.push(`*Meu Trevo — ${info.jogo}*`);
     if (info.proximo) partes.push(`Para o concurso ${info.proximo}`);
     partes.push('');
     partes.push(linhasDosBilhetes(lista).join('\n\n'));
     partes.push('');
     partes.push(`_Análise do histórico oficial da Caixa — ${info.base}._`);
-    partes.push('lotologica.com.br');
+    partes.push('meutrevo.com.br');
 
     const texto = encodeURIComponent(partes.join('\n'));
     // Abre o WhatsApp do próprio usuário; ele escolhe pra quem manda.
@@ -654,7 +654,7 @@ function baixarPDF(lista) {
     let y = M;
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
-    doc.text('LotoLógica', M, y);
+    doc.text('Meu Trevo', M, y);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(120);
     doc.text(config.nome, M + 42, y);
     y += 8;
@@ -690,7 +690,7 @@ function baixarPDF(lista) {
     doc.setDrawColor(220); doc.line(M, y, 210 - M, y); y += 6;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
     const aviso = doc.splitTextToSize(
-        'Jogos montados a partir do histórico oficial real da Caixa. A análise organiza as escolhas com base em dados, mas não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade. — lotologica.com.br',
+        'Jogos montados a partir do histórico oficial real da Caixa. A análise organiza as escolhas com base em dados, mas não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade. — meutrevo.com.br',
         210 - M * 2);
     doc.text(aviso, M, y);
 
@@ -699,17 +699,17 @@ function baixarPDF(lista) {
 
 // Plano B: abre uma janela pronta pra imprimir/salvar em PDF
 function imprimirComoPDF(lista, info) {
-    const html = `<html><head><meta charset="utf-8"><title>LotoLógica — ${info.jogo}</title>
+    const html = `<html><head><meta charset="utf-8"><title>Meu Trevo — ${info.jogo}</title>
       <style>body{font-family:Arial,sans-serif;padding:30px;color:#111}
       h1{margin:0}h2{font-size:14px;color:#555;margin:4px 0 20px}
       .b{margin-bottom:18px}.t{font-weight:bold;font-size:13px}
       .n{font-family:monospace;font-size:20px;letter-spacing:2px;margin-top:4px}
       .av{margin-top:24px;font-size:11px;color:#666;border-top:1px solid #ccc;padding-top:10px}</style>
       </head><body>
-      <h1>LotoLógica — ${info.jogo}</h1>
+      <h1>Meu Trevo — ${info.jogo}</h1>
       <h2>${info.proximo ? 'Para o concurso ' + info.proximo + ' • ' : ''}Base: ${info.base}</h2>
       ${lista.map((b, i) => `<div class="b"><div class="t">BILHETE ${i + 1}</div><div class="n">${b.nums.join('  ')}${b.extras && b.extras.length ? '  + ' + b.extras.join(' ') : ''}</div></div>`).join('')}
-      <div class="av">Jogos montados a partir do histórico oficial real da Caixa. A análise não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade. — lotologica.com.br</div>
+      <div class="av">Jogos montados a partir do histórico oficial real da Caixa. A análise não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade. — meutrevo.com.br</div>
       </body></html>`;
     const w = window.open('', '_blank');
     if (!w) { alert('Permita janelas pop-up para baixar o PDF.'); return; }

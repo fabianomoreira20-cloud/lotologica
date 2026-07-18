@@ -1,4 +1,4 @@
-# LotoLógica PRO
+# Meu Trevo
 
 Gerador de apostas das loterias Caixa com análise estatística sobre o histórico oficial real.
 
