@@ -616,10 +616,13 @@ function linhasDosBilhetes(lista) {
 function cabecalhoInfo() {
     const c = STATE.historico.length ? STATE.historico[0] : null;
     const proximo = c && c.proximoConcurso ? c.proximoConcurso : (c ? c.concurso + 1 : '');
+    const usados = Math.min(janelaAtual, STATE.historico.length);
     return {
         jogo: config.nome,
         proximo: proximo,
-        base: c ? `concurso ${c.concurso} (${c.data})` : ''
+        // Deixa claro que a análise é de MUITOS concursos — o número do último
+        // sorteio é só o selo de "dados atualizados até aqui".
+        base: c ? `${usados} concursos analisados (atualizado até o ${c.concurso}, de ${c.data})` : ''
     };
 }
 
@@ -631,7 +634,7 @@ function enviarWhatsApp(lista) {
     partes.push('');
     partes.push(linhasDosBilhetes(lista).join('\n\n'));
     partes.push('');
-    partes.push(`_Análise sobre o histórico oficial da Caixa (base: ${info.base})._`);
+    partes.push(`_Análise do histórico oficial da Caixa — ${info.base}._`);
     partes.push('lotologica.com.br');
 
     const texto = encodeURIComponent(partes.join('\n'));
@@ -658,25 +661,29 @@ function baixarPDF(lista) {
 
     doc.setFontSize(10); doc.setTextColor(90);
     if (info.proximo) { doc.text('Para o concurso ' + info.proximo, M, y); y += 5; }
-    doc.text('Base de análise: ' + info.base, M, y); y += 4;
-    doc.setDrawColor(200); doc.line(M, y, 210 - M, y); y += 9;
+    doc.setFontSize(9);
+    doc.text(info.base, M, y); y += 4;
+    doc.setDrawColor(200); doc.line(M, y, 210 - M, y); y += 7;
+
+    // Layout compacto: cabem 10 bilhetes numa folha só.
+    // Dezenas numa linha só (quebra apenas em jogos grandes, tipo Lotomania).
+    const porLinha = (lista[0] && lista[0].nums.length > 16) ? 10 : 20;
 
     lista.forEach((b, i) => {
-        if (y > 250) { doc.addPage(); y = M; }
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30);
-        doc.text('BILHETE ' + (i + 1), M, y); y += 7;
+        if (y > 262) { doc.addPage(); y = M; }
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(110);
+        doc.text('BILHETE ' + (i + 1), M, y); y += 5;
 
-        doc.setFont('courier', 'bold'); doc.setFontSize(14); doc.setTextColor(0);
-        // quebra em linhas de 8 dezenas pra caber bonito
+        doc.setFont('courier', 'bold'); doc.setFontSize(12); doc.setTextColor(0);
         const grupos = [];
-        for (let k = 0; k < b.nums.length; k += 8) grupos.push(b.nums.slice(k, k + 8).join('   '));
-        grupos.forEach(g => { doc.text(g, M + 2, y); y += 7; });
+        for (let k = 0; k < b.nums.length; k += porLinha) grupos.push(b.nums.slice(k, k + porLinha).join('  '));
+        grupos.forEach(g => { doc.text(g, M + 2, y); y += 6; });
 
         if (b.extras && b.extras.length) {
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(120);
-            doc.text('+ ' + b.extras.join('   '), M + 2, y); y += 7;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(120);
+            doc.text('+ ' + b.extras.join('   '), M + 2, y); y += 6;
         }
-        y += 3;
+        y += 2.5;
     });
 
     y += 4;
