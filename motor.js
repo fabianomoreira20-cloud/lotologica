@@ -573,6 +573,140 @@ function renderizarBolasNaTela(listaBilhetes, containerId) {
 
         container.appendChild(box);
     });
+
+    // Barra de ações: levar os jogos embora (o app não guarda nada)
+    if (listaBilhetes.length) container.appendChild(barraDeAcoes(listaBilhetes));
+}
+
+// ------------------------------------------
+// LEVAR OS JOGOS EMBORA
+// O sistema NÃO armazena apostas. Quem guarda é o apostador —
+// por isso ele leva em PDF (arquivo) ou no WhatsApp (texto).
+// ------------------------------------------
+function barraDeAcoes(lista) {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:10px;margin-top:4px;';
+
+    const estilo = 'flex:1;border:none;padding:13px 10px;border-radius:10px;font-weight:800;font-size:0.85rem;cursor:pointer;color:#fff;box-shadow:0 4px 10px rgba(0,0,0,0.3);';
+
+    const btnPdf = document.createElement('button');
+    btnPdf.innerHTML = '📄 BAIXAR PDF';
+    btnPdf.style.cssText = estilo + 'background:#475569;';
+    btnPdf.onclick = () => baixarPDF(lista);
+
+    const btnZap = document.createElement('button');
+    btnZap.innerHTML = '💬 WHATSAPP';
+    btnZap.style.cssText = estilo + 'background:#25D366;';
+    btnZap.onclick = () => enviarWhatsApp(lista);
+
+    bar.appendChild(btnPdf);
+    bar.appendChild(btnZap);
+    return bar;
+}
+
+// Texto limpo dos bilhetes (serve pro WhatsApp e pro PDF)
+function linhasDosBilhetes(lista) {
+    return lista.map((b, i) => {
+        const dezenas = b.nums.join(' - ');
+        const extras = b.extras && b.extras.length ? '\n   + ' + b.extras.join('  ') : '';
+        return `BILHETE ${i + 1}\n   ${dezenas}${extras}`;
+    });
+}
+
+function cabecalhoInfo() {
+    const c = STATE.historico.length ? STATE.historico[0] : null;
+    const proximo = c && c.proximoConcurso ? c.proximoConcurso : (c ? c.concurso + 1 : '');
+    return {
+        jogo: config.nome,
+        proximo: proximo,
+        base: c ? `concurso ${c.concurso} (${c.data})` : ''
+    };
+}
+
+function enviarWhatsApp(lista) {
+    const info = cabecalhoInfo();
+    const partes = [];
+    partes.push(`*LotoLógica — ${info.jogo}*`);
+    if (info.proximo) partes.push(`Para o concurso ${info.proximo}`);
+    partes.push('');
+    partes.push(linhasDosBilhetes(lista).join('\n\n'));
+    partes.push('');
+    partes.push(`_Análise sobre o histórico oficial da Caixa (base: ${info.base})._`);
+    partes.push('lotologica.com.br');
+
+    const texto = encodeURIComponent(partes.join('\n'));
+    // Abre o WhatsApp do próprio usuário; ele escolhe pra quem manda.
+    window.open('https://wa.me/?text=' + texto, '_blank');
+}
+
+function baixarPDF(lista) {
+    const info = cabecalhoInfo();
+
+    // Se a biblioteca não carregou, cai na impressão do navegador (salvar como PDF)
+    const lib = window.jspdf && window.jspdf.jsPDF;
+    if (!lib) { imprimirComoPDF(lista, info); return; }
+
+    const doc = new lib({ unit: 'mm', format: 'a4' });
+    const M = 18;
+    let y = M;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+    doc.text('LotoLógica', M, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.setTextColor(120);
+    doc.text(config.nome, M + 42, y);
+    y += 8;
+
+    doc.setFontSize(10); doc.setTextColor(90);
+    if (info.proximo) { doc.text('Para o concurso ' + info.proximo, M, y); y += 5; }
+    doc.text('Base de análise: ' + info.base, M, y); y += 4;
+    doc.setDrawColor(200); doc.line(M, y, 210 - M, y); y += 9;
+
+    lista.forEach((b, i) => {
+        if (y > 250) { doc.addPage(); y = M; }
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(30);
+        doc.text('BILHETE ' + (i + 1), M, y); y += 7;
+
+        doc.setFont('courier', 'bold'); doc.setFontSize(14); doc.setTextColor(0);
+        // quebra em linhas de 8 dezenas pra caber bonito
+        const grupos = [];
+        for (let k = 0; k < b.nums.length; k += 8) grupos.push(b.nums.slice(k, k + 8).join('   '));
+        grupos.forEach(g => { doc.text(g, M + 2, y); y += 7; });
+
+        if (b.extras && b.extras.length) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(120);
+            doc.text('+ ' + b.extras.join('   '), M + 2, y); y += 7;
+        }
+        y += 3;
+    });
+
+    y += 4;
+    doc.setDrawColor(220); doc.line(M, y, 210 - M, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130);
+    const aviso = doc.splitTextToSize(
+        'Jogos montados a partir do histórico oficial real da Caixa. A análise organiza as escolhas com base em dados, mas não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade. — lotologica.com.br',
+        210 - M * 2);
+    doc.text(aviso, M, y);
+
+    doc.save('lotologica-' + config.api + '.pdf');
+}
+
+// Plano B: abre uma janela pronta pra imprimir/salvar em PDF
+function imprimirComoPDF(lista, info) {
+    const html = `<html><head><meta charset="utf-8"><title>LotoLógica — ${info.jogo}</title>
+      <style>body{font-family:Arial,sans-serif;padding:30px;color:#111}
+      h1{margin:0}h2{font-size:14px;color:#555;margin:4px 0 20px}
+      .b{margin-bottom:18px}.t{font-weight:bold;font-size:13px}
+      .n{font-family:monospace;font-size:20px;letter-spacing:2px;margin-top:4px}
+      .av{margin-top:24px;font-size:11px;color:#666;border-top:1px solid #ccc;padding-top:10px}</style>
+      </head><body>
+      <h1>LotoLógica — ${info.jogo}</h1>
+      <h2>${info.proximo ? 'Para o concurso ' + info.proximo + ' • ' : ''}Base: ${info.base}</h2>
+      ${lista.map((b, i) => `<div class="b"><div class="t">BILHETE ${i + 1}</div><div class="n">${b.nums.join('  ')}${b.extras && b.extras.length ? '  + ' + b.extras.join(' ') : ''}</div></div>`).join('')}
+      <div class="av">Jogos montados a partir do histórico oficial real da Caixa. A análise não altera a probabilidade do sorteio nem garante premiação. Jogue com responsabilidade. — lotologica.com.br</div>
+      </body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) { alert('Permita janelas pop-up para baixar o PDF.'); return; }
+    w.document.write(html); w.document.close(); w.focus(); w.print();
 }
 
 // Percorre TODO o histórico real e conta quantas vezes esse bilhete teria premiado
@@ -667,5 +801,12 @@ function mostrarProbabilidade(painel, q) {
     const p = probabilidadeTopo(q);
     if (!p || !isFinite(p) || p <= 0) { linha.innerHTML = ''; return; }
     const umEm = Math.round(1 / p).toLocaleString('pt-BR');
-    linha.innerHTML = `🎯 Chance do prêmio máximo com <b>${q} dezenas</b>: <b style="color:#e2e8f0;">1 em ${umEm}</b>`;
+
+    // Média esperada de acertos: sorteadas × suas dezenas ÷ universo.
+    // Mostrar isso evita a frustração de achar que o sistema "errou"
+    // quando na verdade o resultado veio na média.
+    const media = (config.sorteados * q / config.limiteTabela);
+    const linhaMedia = `<br>📊 Acertos esperados por bilhete: <b style="color:#e2e8f0;">~${media.toFixed(1)}</b> <span style="color:#64748b;">(é a média normal, não é falha)</span>`;
+
+    linha.innerHTML = `🎯 Chance do prêmio máximo com <b>${q} dezenas</b>: <b style="color:#e2e8f0;">1 em ${umEm}</b>` + linhaMedia;
 }
