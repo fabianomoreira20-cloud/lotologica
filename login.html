@@ -33,6 +33,12 @@
         label { display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
         input { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 13px; border-radius: 8px; font-size: 1rem; outline: none; margin-bottom: 16px; }
         input:focus { border-color: var(--theme-color); }
+
+        /* Campo de senha com o olhinho de mostrar/ocultar */
+        .campo-senha { position: relative; }
+        .campo-senha input { padding-right: 48px; }
+        .olho { position: absolute; right: 6px; top: 6px; background: transparent; border: none; font-size: 1.1rem; cursor: pointer; padding: 6px 8px; line-height: 1; opacity: 0.75; }
+        .olho:hover { opacity: 1; }
         .btn { width: 100%; background: var(--success-color); color: #fff; border: none; padding: 14px; border-radius: 8px; font-weight: 800; font-size: 1.05rem; cursor: pointer; box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
         .btn:active { transform: scale(0.99); }
         .btn:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -53,11 +59,16 @@
         <div class="msg msg-ok" id="msg-ok"></div>
 
         <form id="form-login">
-            <label for="email">E-mail</label>
-            <input type="email" id="email" autocomplete="email" placeholder="seu@email.com" required>
+            <div id="campo-email">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" autocomplete="email" placeholder="seu@email.com" required>
+            </div>
 
             <label for="senha">Senha</label>
-            <input type="password" id="senha" autocomplete="current-password" placeholder="Sua senha" required>
+            <div class="campo-senha">
+                <input type="password" id="senha" autocomplete="current-password" placeholder="Sua senha" required>
+                <button type="button" class="olho" id="btn-olho" aria-label="Mostrar senha">👁️</button>
+            </div>
 
             <button type="submit" class="btn" id="btn-entrar">ENTRAR</button>
         </form>
@@ -73,13 +84,48 @@
         const elErro = document.getElementById('msg-erro');
         const elOk = document.getElementById('msg-ok');
         const btn = document.getElementById('btn-entrar');
-        let modo = 'entrar'; // 'entrar' | 'cadastrar'
+        let modo = 'entrar'; // 'entrar' | 'cadastrar' | 'nova-senha'
 
         function mostrarErro(txt) { elOk.style.display = 'none'; elErro.innerText = txt; elErro.style.display = 'block'; }
         function mostrarOk(txt) { elErro.style.display = 'none'; elOk.innerText = txt; elOk.style.display = 'block'; }
 
-        // Se já estiver logado, não fica preso na tela de login
+        // Olhinho: mostrar/ocultar a senha
+        document.getElementById('btn-olho').addEventListener('click', () => {
+            const campo = document.getElementById('senha');
+            const olho = document.getElementById('btn-olho');
+            const vendo = campo.type === 'text';
+            campo.type = vendo ? 'password' : 'text';
+            olho.innerText = vendo ? '👁️' : '🙈';
+            olho.setAttribute('aria-label', vendo ? 'Mostrar senha' : 'Ocultar senha');
+            campo.focus();
+        });
+
+        // Entra no modo "definir nova senha" (quem chegou pelo link do e-mail)
+        function entrarModoNovaSenha() {
+            modo = 'nova-senha';
+            document.getElementById('subtitulo').innerText = 'Defina sua nova senha';
+            document.getElementById('campo-email').style.display = 'none';
+            const s = document.getElementById('senha');
+            s.value = '';
+            s.setAttribute('autocomplete', 'new-password');
+            s.placeholder = 'Nova senha (mín. 6 caracteres)';
+            btn.innerText = 'SALVAR NOVA SENHA';
+            document.getElementById('link-recuperar').style.display = 'none';
+            document.getElementById('link-modo').style.display = 'none';
+            mostrarOk('Quase lá! Digite a senha nova que você quer usar.');
+        }
+
+        // O Supabase avisa quando a pessoa chega pelo link de recuperação.
+        sb.auth.onAuthStateChange((evento) => {
+            if (evento === 'PASSWORD_RECOVERY') entrarModoNovaSenha();
+        });
+
+        // Se já estiver logado, não fica preso na tela de login.
+        // Exceção: quem veio do link de recuperação TEM sessão, mas precisa
+        // trocar a senha antes — por isso checamos o endereço primeiro.
         (async () => {
+            const veioDeRecuperacao = location.hash.includes('type=recovery');
+            if (veioDeRecuperacao) { entrarModoNovaSenha(); return; }
             const sessao = await pegarSessao();
             if (sessao) location.replace('index.html');
         })();
@@ -112,7 +158,25 @@
             const senha = document.getElementById('senha').value;
 
             btn.disabled = true;
-            btn.innerText = (modo === 'entrar') ? 'ENTRANDO…' : 'CRIANDO…';
+            btn.innerText = (modo === 'entrar') ? 'ENTRANDO…' : (modo === 'nova-senha' ? 'SALVANDO…' : 'CRIANDO…');
+
+            // Quem chegou pelo link do e-mail: só troca a senha e entra.
+            if (modo === 'nova-senha') {
+                if (senha.length < 6) {
+                    mostrarErro('A senha precisa ter pelo menos 6 caracteres.');
+                    btn.disabled = false; btn.innerText = 'SALVAR NOVA SENHA';
+                    return;
+                }
+                const { error } = await sb.auth.updateUser({ password: senha });
+                if (error) {
+                    mostrarErro(traduzErroAuth(error));
+                    btn.disabled = false; btn.innerText = 'SALVAR NOVA SENHA';
+                    return;
+                }
+                mostrarOk('Senha alterada! Entrando…');
+                setTimeout(() => location.replace('index.html'), 1200);
+                return;
+            }
 
             if (modo === 'cadastrar') {
                 // ⚠️ CRÍTICO: o campo 'produto' É OBRIGATÓRIO.
