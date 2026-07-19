@@ -618,10 +618,29 @@ function linhasDosBilhetes(lista) {
 // PRÓXIMO SORTEIO E PRAZO DE APOSTA
 // A data vem do calendário OFICIAL da Caixa (campo dataProximoConcurso),
 // então feriado, fim de semana e mudança de dia já vêm resolvidos —
-// não programamos calendário nenhum aqui.
-// As apostas encerram às 19h (horário de Brasília) do dia do sorteio.
+// não chumbamos calendário nenhum aqui.
+//
+// REGRA DE PRAZO (mudança da Caixa anunciada em julho/2026):
+//   - Sorteios que caem no DOMINGO (os que migraram do sábado, agora às 11h):
+//     as apostas encerram às 22h do SÁBADO, a véspera.
+//   - Demais dias (segunda a sexta): sem mudança, apostas até as 19h do
+//     próprio dia do sorteio.
+// Horários de Brasília.
 // ------------------------------------------
-const HORA_LIMITE_APOSTA = 19;
+const SEMANA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+function prazoDeAposta(dataSorteio) {
+    if (dataSorteio.getDay() === 0) {
+        // Sorteio de domingo 11h → aposta até 22h de sábado
+        const vespera = new Date(dataSorteio);
+        vespera.setDate(vespera.getDate() - 1);
+        vespera.setHours(22, 0, 0, 0);
+        return { limite: vespera, texto: 'até as 22h de sábado', sorteio: 'domingo às 11h' };
+    }
+    const d = new Date(dataSorteio);
+    d.setHours(19, 0, 0, 0);
+    return { limite: d, texto: 'até as 19h do dia do sorteio', sorteio: null };
+}
 
 function infoProximoSorteio() {
     const c = STATE.historico.length ? STATE.historico[0] : null;
@@ -631,16 +650,18 @@ function infoProximoSorteio() {
     if (partes.length !== 3) return null;
     const dia = parseInt(partes[0], 10), mes = parseInt(partes[1], 10), ano = parseInt(partes[2], 10);
 
-    const limite = new Date(ano, mes - 1, dia, HORA_LIMITE_APOSTA, 0, 0);
+    const dataSorteio = new Date(ano, mes - 1, dia);
+    const prazo = prazoDeAposta(dataSorteio);
     const agora = new Date();
-    const semanas = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 
     return {
         concurso: c.proximoConcurso,
         data: c.dataProximoConcurso,
-        diaSemana: semanas[new Date(ano, mes - 1, dia).getDay()],
-        encerrado: agora > limite,
-        horasRestantes: Math.max(0, Math.round((limite - agora) / 3600000))
+        diaSemana: SEMANA[dataSorteio.getDay()],
+        prazoTexto: prazo.texto,
+        horaSorteio: prazo.sorteio,
+        encerrado: agora > prazo.limite,
+        horasRestantes: Math.max(0, Math.round((prazo.limite - agora) / 3600000))
     };
 }
 
@@ -657,18 +678,22 @@ function renderPainelSorteio() {
         status.parentNode.insertBefore(el, status.nextSibling);
     }
 
+    const quando = s.horaSorteio
+        ? `${s.diaSemana.charAt(0).toUpperCase() + s.diaSemana.slice(1)}, ${s.data} <b>às 11h</b>`
+        : `${s.diaSemana.charAt(0).toUpperCase() + s.diaSemana.slice(1)}, ${s.data}`;
+
     if (s.encerrado) {
-        // Passou das 19h do dia do sorteio: não dá mais pra apostar neste concurso.
+        // Passou do prazo: não dá mais pra apostar neste concurso.
         el.style.cssText = 'background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:14px;font-size:0.8rem;color:#fcd34d;line-height:1.55;';
         el.innerHTML = `⏰ <b>Apostas encerradas para o concurso ${s.concurso}</b> (${s.diaSemana}, ${s.data}).<br>
-            O prazo vai até as <b>19h</b> do dia do sorteio. Os jogos gerados agora valem para o <b>próximo concurso</b>.`;
+            O prazo era <b>${s.prazoTexto}</b>. Os jogos gerados agora valem para o <b>próximo concurso</b>.`;
     } else {
         el.style.cssText = 'background:var(--card-bg);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:14px;font-size:0.82rem;color:#cbd5e1;line-height:1.55;box-shadow:var(--shadow);';
         const aviso = s.horasRestantes <= 6
             ? ` <b style="color:#fcd34d;">Faltam ~${s.horasRestantes}h!</b>`
             : '';
         el.innerHTML = `🎯 <b style="color:#e2e8f0;">Próximo sorteio: concurso ${s.concurso}</b><br>
-            ${s.diaSemana.charAt(0).toUpperCase() + s.diaSemana.slice(1)}, ${s.data} — apostas até as <b>19h</b>.${aviso}`;
+            ${quando} — apostas <b>${s.prazoTexto}</b>.${aviso}`;
     }
 }
 
@@ -683,6 +708,8 @@ function cabecalhoInfo() {
         // Data oficial do próximo sorteio + se o prazo daquele concurso já passou
         dataSorteio: s ? s.data : null,
         diaSemana: s ? s.diaSemana : null,
+        prazoTexto: s ? s.prazoTexto : null,
+        horaSorteio: s ? s.horaSorteio : null,
         prazoEncerrado: s ? s.encerrado : false,
         // Deixa claro que a análise é de MUITOS concursos — o número do último
         // sorteio é só o selo de "dados atualizados até aqui".
@@ -695,9 +722,11 @@ function enviarWhatsApp(lista) {
     const partes = [];
     partes.push(`*Meu Trevo — ${info.jogo}*`);
     if (info.prazoEncerrado) {
-        partes.push(`⏰ _Apostas do concurso ${info.proximo} já encerraram (19h). Estes jogos valem para o próximo sorteio._`);
+        partes.push(`⏰ _Apostas do concurso ${info.proximo} já encerraram. Estes jogos valem para o próximo sorteio._`);
     } else if (info.proximo && info.dataSorteio) {
-        partes.push(`Concurso ${info.proximo} — sorteio ${info.diaSemana}, ${info.dataSorteio} (apostas até 19h)`);
+        const hora = info.horaSorteio ? ' às 11h' : '';
+        partes.push(`Concurso ${info.proximo} — sorteio ${info.diaSemana}, ${info.dataSorteio}${hora}`);
+        partes.push(`Apostas ${info.prazoTexto}`);
     } else if (info.proximo) {
         partes.push(`Para o concurso ${info.proximo}`);
     }
@@ -732,10 +761,12 @@ function baixarPDF(lista) {
     doc.setFontSize(10); doc.setTextColor(90);
     if (info.prazoEncerrado) {
         doc.setTextColor(180, 120, 0);
-        doc.text('Apostas do concurso ' + info.proximo + ' encerraram (19h) - valem para o proximo sorteio', M, y);
+        doc.text('Apostas do concurso ' + info.proximo + ' encerraram - valem para o proximo sorteio', M, y);
         doc.setTextColor(90); y += 5;
     } else if (info.proximo && info.dataSorteio) {
-        doc.text('Concurso ' + info.proximo + ' - sorteio ' + info.diaSemana + ', ' + info.dataSorteio + ' (apostas ate 19h)', M, y); y += 5;
+        const hora = info.horaSorteio ? ' as 11h' : '';
+        doc.text('Concurso ' + info.proximo + ' - sorteio ' + info.diaSemana + ', ' + info.dataSorteio + hora, M, y); y += 5;
+        doc.text('Apostas ' + (info.prazoTexto || ''), M, y); y += 5;
     } else if (info.proximo) {
         doc.text('Para o concurso ' + info.proximo, M, y); y += 5;
     }
