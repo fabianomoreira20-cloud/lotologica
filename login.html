@@ -186,7 +186,14 @@
                 const { error } = await sb.auth.signUp({
                     email,
                     password: senha,
-                    options: { data: { produto: PRODUTO } } // PRODUTO = 'lotologica' (vem do b12.js)
+                    options: {
+                        data: { produto: PRODUTO }, // PRODUTO = 'lotologica' (vem do b12.js)
+                        // OBRIGATÓRIO: o "Site URL" do projeto Supabase aponta para o
+                        // DrControl (é o mesmo projeto). Sem esta linha, o link do
+                        // e-mail de confirmação levaria o cliente do Meu Trevo para
+                        // o drcontrol.com.br.
+                        emailRedirectTo: location.origin + '/login.html'
+                    }
                 });
                 if (error) {
                     mostrarErro(traduzErroAuth(error));
